@@ -2,6 +2,8 @@ const functions = require('firebase-functions');
 const nodemailer = require('nodemailer');
 const express = require('express');
 const app = express();
+const functions = require('firebase-functions');
+const app = require('./server');
 
 exports.sendEmail = functions.https.onRequest(async (request, response) => {
   try {
@@ -47,4 +49,7 @@ app.use((err,req,res,next)=>{
         }
     })
 })
+ // Adjust the path as necessary
+
+exports.app = functions.https.onRequest(app);
 app.listen(4000,()=>{console.log(`you are now listening to http://localhost:${process.env.PORT}`)})

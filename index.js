@@ -1,13 +1,31 @@
-const functions = require('firebase-functions');
 const nodemailer = require('nodemailer');
 const express = require('express');
 const app = express();
-const functions = require('firebase-functions');
-const app = require('./server');
+const cors=require('cors');
+const cryptojs = require('crypto-js')
+require('dotenv').config();
 
-app.get('sendEmail',async (request,response)=>{
+app.use(express.json());
+//*Code written for allowing the client to access the backend*/
+const allowedOrigins='http://localhost:3000';
+app.use(cors({
+    origin:(origin,callback)=>{
+        if(!origin||allowedOrigins.includes(origin)){
+            callback(null,true);
+        }
+        else{
+            callback(new error('not allowed by cors')); 
+        }
+    }
+}));
+
+app.post('/sendEmail',async (request,response,next)=>{
     try {
-        const {securityCode,UserEmail}=request.body;
+        const {UserEmail}=request.body;
+        const randomNumber = String(Math.floor(100000 + Math.random() * 900000));
+        const encryptionKey ='72ee941d66f446a7bcd354';
+        const ciphertext = cryptojs.AES.encrypt(randomNumber,encryptionKey).toString();
+
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
@@ -22,13 +40,16 @@ app.get('sendEmail',async (request,response)=>{
             from: 'stockpilotorg@gmail.com',
             to: `${UserEmail}`,
             subject: 'Test Email from Firebase',
-            text: `${securityCode}`,
+            text: `${randomNumber}`,
           };
       
           // Send the email
           await transporter.sendMail(mailOptions);
       
-          response.send('Email sent successfully!');
+          response.send({
+             ciphertext:ciphertext,
+             massage:"Email has been send"
+          });
     } catch (error) {
         console.error('Error sending email:', error);
         response.status(500).send('Error sending email');
@@ -49,6 +70,4 @@ app.use((err,req,res,next)=>{
     })
 })
  // Adjust the path as necessary
-
-exports.app = functions.https.onRequest(app);
 app.listen(4000,()=>{console.log(`you are now listening to http://localhost:4000`)})
